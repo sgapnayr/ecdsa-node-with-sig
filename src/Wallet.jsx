@@ -10,11 +10,16 @@ function Wallet({
   setBalance,
   privateKey,
   setPrivateKey,
+  verifyWalletOwner,
+  setVerifyWalletOwner,
 }) {
   const [digitalSignature, setDigitalSignature] = useState("");
   const [message, setMessage] = useState("");
+  const [signature, setSignature] = useState("");
+  const [walletAddress, setWalletAddress] = useState("");
 
   async function onChange(evt) {
+    setVerifyWalletOwner(false);
     const address = evt.target.value;
     setAddress(address);
     if (address) {
@@ -29,20 +34,6 @@ function Wallet({
 
   const ec = new EC.ec("secp256k1");
 
-  function hexToBytes(hex) {
-    const bytes = new Uint8Array(hex.length / 2);
-    for (let i = 0, c = 0; c < hex.length; c += 2, i++) {
-      bytes[i] = parseInt(hex.substr(c, 2), 16);
-    }
-    return bytes;
-  }
-
-  function bytesToHex(bytes) {
-    return Array.from(bytes, (byte) => byte.toString(16).padStart(2, "0")).join(
-      ""
-    );
-  }
-
   async function onChangePrivateKey(evt) {
     const privateKeyInput = evt.target.value;
     setPrivateKey(privateKeyInput);
@@ -55,10 +46,13 @@ function Wallet({
 
       const hashedPublicKey = ethers.keccak256("0x" + publicKey.slice());
 
-      const address = "0x" + hashedPublicKey.slice(-40);
+      const addressFromPrivateKey = "0x" + hashedPublicKey.slice(-40);
 
-      console.log("Ethereum Address: ", address);
-      setAddress(address);
+      setVerifyWalletOwner(false);
+      if (address == addressFromPrivateKey) {
+        setVerifyWalletOwner(true);
+        setAddress(address);
+      }
 
       const {
         data: { balance },
@@ -75,8 +69,6 @@ function Wallet({
       return;
     }
 
-    console.log(privateKey);
-
     const keyPair = ec.keyFromPrivate(privateKey, "hex");
     const signature = keyPair.sign(
       ethers.keccak256(ethers.toUtf8Bytes(message)),
@@ -85,7 +77,7 @@ function Wallet({
     setDigitalSignature(signature.toDER("hex"));
   }
 
-  function verifySignature() {
+  function verifySignature(_walletAddress) {
     if (!message || !digitalSignature) {
       alert("Message and digital signature are required.");
       return;
@@ -93,6 +85,13 @@ function Wallet({
 
     const keyPair = ec.keyFromPrivate(privateKey, "hex");
     const publicKey = keyPair.getPublic("hex");
+
+    const hashedPublicKey = ethers.keccak256("0x" + publicKey.slice());
+
+    const address = "0x" + hashedPublicKey.slice(-40);
+    setSignature("");
+    if (_walletAddress !== address) return;
+    setSignature(address);
     const msgHash = ethers.keccak256(ethers.toUtf8Bytes(message));
 
     const isVerified = ec.verify(msgHash, digitalSignature, publicKey, "hex");
@@ -119,6 +118,7 @@ function Wallet({
           onChange={onChangePrivateKey}
         ></input>
       </label>
+      <label>Wallet Owner: {verifyWalletOwner ? "Owner" : "Not owner"}</label>
 
       <div className="balance">Balance: {balance}</div>
 
@@ -133,9 +133,24 @@ function Wallet({
       </label>
 
       <button onClick={signMessage}>Sign Message</button>
-      <label>Digital Signature: {digitalSignature}</label>
+      <label>
+        Digital Signature:{" "}
+        {digitalSignature.slice(0, 10) + "..." + digitalSignature.slice(-10)}
+      </label>
 
-      <button onClick={verifySignature}>Verify Signature</button>
+      <label>
+        Verify Signature
+        <input
+          type="text"
+          value={walletAddress}
+          onChange={(e) => setWalletAddress(e.target.value)}
+          placeholder="Enter a message to sign"
+        />
+        <button onClick={() => verifySignature(walletAddress)}>
+          Verify Signature
+        </button>
+      </label>
+      <label>Public Key: {signature}</label>
     </div>
   );
 }

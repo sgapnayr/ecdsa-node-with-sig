@@ -1,13 +1,18 @@
 import { useState } from "react";
 import server from "./server";
 
-function Transfer({ address, setBalance }) {
+function Transfer({ address, setBalance, verifyWalletOwner }) {
   const [sendAmount, setSendAmount] = useState("");
   const [recipient, setRecipient] = useState("");
 
   const setValue = (setter) => (evt) => setter(evt.target.value);
 
   async function transfer(evt) {
+    if (!verifyWalletOwner) {
+      alert("You are not the owner of this wallet");
+      return;
+    }
+
     evt.preventDefault();
 
     try {
@@ -19,6 +24,7 @@ function Transfer({ address, setBalance }) {
         recipient,
       });
       setBalance(balance);
+      alert("Transfer successful!");
     } catch (ex) {
       alert(ex.response.data.message);
     }
