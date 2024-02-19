@@ -58,6 +58,7 @@ function Wallet({
       const address = "0x" + hashedPublicKey.slice(-40);
 
       console.log("Ethereum Address: ", address);
+      setAddress(address);
 
       const {
         data: { balance },
@@ -103,21 +104,6 @@ function Wallet({
       <h1>Your Wallet</h1>
 
       <label>
-        Message to Sign
-        <input
-          type="text"
-          value={message}
-          onChange={(e) => setMessage(e.target.value)}
-          placeholder="Enter a message to sign"
-        />
-      </label>
-
-      <button onClick={signMessage}>Sign Message</button>
-      <div>Digital Signature: {digitalSignature}</div>
-
-      <button onClick={verifySignature}>Verify Signature</button>
-
-      <label>
         Wallet Address
         <input
           placeholder="Type an address, for example: 0x1"
@@ -135,6 +121,21 @@ function Wallet({
       </label>
 
       <div className="balance">Balance: {balance}</div>
+
+      <label>
+        Message to Sign
+        <input
+          type="text"
+          value={message}
+          onChange={(e) => setMessage(e.target.value)}
+          placeholder="Enter a message to sign"
+        />
+      </label>
+
+      <button onClick={signMessage}>Sign Message</button>
+      <label>Digital Signature: {digitalSignature}</label>
+
+      <button onClick={verifySignature}>Verify Signature</button>
     </div>
   );
 }
